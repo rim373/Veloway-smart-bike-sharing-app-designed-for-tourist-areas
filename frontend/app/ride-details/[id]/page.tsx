@@ -95,7 +95,7 @@ export default function RideDetailsPage() {
             </Card>
             <Card className="p-4 border border-border bg-card">
               <p className="text-muted-foreground text-xs uppercase font-medium">Cost</p>
-              <p className="text-2xl font-bold text-accent mt-2">${ride.estimatedCost.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-accent mt-2">{ride.estimatedCost.toFixed(2)} TND</p>
             </Card>
           </div>
 
