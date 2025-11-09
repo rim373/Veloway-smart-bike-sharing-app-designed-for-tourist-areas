@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useRideHistory } from "@/lib/ride-history-context"
@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
 export default function ProfilePage() {
   const { user, isLoading, logout } = useAuth()
@@ -21,40 +22,57 @@ export default function ProfilePage() {
     totalDuration: 0,
     totalSpent: 0,
   })
+  const [sortBy, setSortBy] = useState("date") // date ou cost
 
+  // Redirection si pas connecté
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login")
-    }
+    if (!isLoading && !user) router.push("/login")
   }, [user, isLoading, router])
 
+  // Calcul stats quand rides changent
   useEffect(() => {
-    setStats(getTotalStats())
+    if (rides.length > 0) setStats(getTotalStats())
   }, [rides, getTotalStats])
 
+  const sortedRides = useMemo(() => {
+    return [...rides].sort((a, b) =>
+      sortBy === "cost"
+        ? b.estimatedCost - a.estimatedCost
+        : new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+    )
+  }, [rides, sortBy])
+
   if (isLoading) {
+    // Skeleton Loader
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <main className="min-h-screen bg-background p-8">
+        <div className="animate-pulse space-y-4 max-w-4xl mx-auto">
+          <div className="h-12 w-3/4 bg-muted rounded"></div>
+          <div className="h-6 w-1/2 bg-muted rounded"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="h-20 bg-muted rounded"></div>
+            <div className="h-20 bg-muted rounded"></div>
+            <div className="h-20 bg-muted rounded"></div>
+            <div className="h-20 bg-muted rounded"></div>
+          </div>
+        </div>
+      </main>
     )
   }
 
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   return (
     <main className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header Section */}
+          {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">My Profile</h1>
             <p className="text-muted-foreground">Manage your account and view your riding history</p>
           </div>
 
-          {/* Wallet Balance Card */}
+          {/* Wallet */}
           {wallet && (
             <Card className="p-6 border border-accent bg-accent/5 mb-8">
               <div className="flex items-center justify-between">
@@ -78,7 +96,7 @@ export default function ProfilePage() {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
-              {/* User Info Card */}
+              {/* User Info */}
               <Card className="p-6 border border-border bg-card">
                 <h2 className="text-lg font-bold text-foreground mb-4">Account Information</h2>
                 <div className="space-y-4">
@@ -100,7 +118,7 @@ export default function ProfilePage() {
               {/* Stats Cards */}
               <div>
                 <h2 className="text-lg font-bold text-foreground mb-4">Your Stats</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <Card className="p-4 border border-border bg-card">
                     <p className="text-muted-foreground text-xs uppercase font-medium">Total Rides</p>
                     <p className="text-2xl font-bold text-foreground mt-2">{stats.totalRides}</p>
@@ -122,7 +140,27 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* Stats Chart */}
+              {rides.length > 0 && (
+                <Card className="p-4 border border-border bg-card">
+                  <h3 className="text-md font-bold text-foreground mb-2">Ride Costs Over Time</h3>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart
+                      data={rides.map(r => ({
+                        date: new Date(r.startTime).toLocaleDateString(),
+                        cost: r.estimatedCost,
+                      }))}
+                    >
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="cost" stroke="#4f46e5" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
+              )}
+
+              {/* Quick Actions */}
               <Card className="p-6 border border-border bg-card">
                 <h2 className="text-lg font-bold text-foreground mb-4">Quick Actions</h2>
                 <div className="space-y-3">
@@ -147,6 +185,11 @@ export default function ProfilePage() {
 
             {/* History Tab */}
             <TabsContent value="history" className="space-y-4">
+              <div className="flex justify-end mb-2 gap-2">
+                <Button size="sm" onClick={() => setSortBy("date")}>Sort by Date</Button>
+                <Button size="sm" onClick={() => setSortBy("cost")}>Sort by Cost</Button>
+              </div>
+
               {rides.length === 0 ? (
                 <Card className="p-12 border border-border bg-card text-center">
                   <p className="text-muted-foreground mb-4">No rides yet</p>
@@ -158,7 +201,7 @@ export default function ProfilePage() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {rides.map((ride) => (
+                  {sortedRides.map((ride) => (
                     <Link key={ride.id} href={`/ride-details/${ride.id}`} className="block">
                       <Card className="p-4 border border-border hover:border-accent transition-all cursor-pointer hover:bg-muted/50">
                         <div className="flex items-start justify-between">
@@ -186,7 +229,7 @@ export default function ProfilePage() {
                           </div>
                           <div>
                             <p className="text-muted-foreground text-xs">Speed</p>
-                            <p className="text-foreground font-medium">{ride.speed.toFixed(1)} km/h</p>
+                            <p className="text-foreground font-medium text-sm">{ride.speed.toFixed(1)} km/h</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground text-xs">Plan</p>

@@ -1,41 +1,44 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { useMap } from "@/lib/map-context"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import MapView from "@/components/map-view"
-import StationList from "@/components/station-list"
-import Link from "next/link"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { useMap } from "@/lib/map-context";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import StationList from "@/components/station-list";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+
+// 🔹 Import dynamique pour éviter "window is not defined"
+const MapView = dynamic(() => import("@/components/map-view"), {
+  ssr: false,
+});
 
 export default function MapPage() {
-  const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
-  const { stations, selectedStation, setSelectedStation, fetchStations, isLoading } = useMap()
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const { stations, selectedStation, setSelectedStation, fetchStations, isLoading } = useMap();
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading, router]);
 
   useEffect(() => {
-    fetchStations()
-  }, [])
+    fetchStations();
+  }, []);
 
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
-  if (!user) {
-    return null
-  }
+  if (!user) return null;
 
   return (
     <main className="min-h-screen bg-background">
@@ -53,7 +56,9 @@ export default function MapPage() {
             {selectedStation ? (
               <StationDetails station={selectedStation} />
             ) : (
-              <p className="text-muted-foreground text-center text-sm">Tap a station on the map to see details</p>
+              <p className="text-muted-foreground text-center text-sm">
+                Tap a station on the map to see details
+              </p>
             )}
           </div>
         </div>
@@ -66,14 +71,19 @@ export default function MapPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            <StationList stations={stations} selectedStation={selectedStation} onSelectStation={setSelectedStation} />
+            <StationList
+              stations={stations}
+              selectedStation={selectedStation}
+              onSelectStation={setSelectedStation}
+            />
           </div>
         </div>
       </div>
     </main>
-  )
+  );
 }
 
+// 🔹 Composant de détails station mobile
 function StationDetails({ station }: { station: any }) {
   return (
     <div className="space-y-4">
@@ -94,8 +104,10 @@ function StationDetails({ station }: { station: any }) {
       </div>
 
       <Link href={`/ride?stationId=${station.id}`} className="block">
-        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Rent a Bike</Button>
+        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          Rent a Bike
+        </Button>
       </Link>
     </div>
-  )
+  );
 }
