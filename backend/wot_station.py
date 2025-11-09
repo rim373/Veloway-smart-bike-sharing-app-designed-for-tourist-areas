@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-WOT Station Controller - Raspberry Pi 4
-Manages bike detection (IR sensor) and locking mechanism (motor)
-Communicates via MQTT with backend server
-"""
-
 import RPi.GPIO as GPIO
 import paho.mqtt.client as mqtt
 import json
@@ -55,17 +48,17 @@ class Config:
 
 class LockState(Enum):
     """Lock states"""
-    LOCKED = "locked"
-    UNLOCKED = "unlocked"
-    LOCKING = "locking"
-    UNLOCKING = "unlocking"
-    ERROR = "error"
+    LOCKED = "LOCKED"
+    UNLOCKED = "UNLOCKED"
+    LOCKING = "LOCKING"
+    UNLOCKING = "UNLOCKING"
+    ERROR = "ERROR"
 
 class BikeState(Enum):
     """Bike presence states"""
-    PRESENT = "present"
-    ABSENT = "absent"
-    DETECTING = "detecting"
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+    DETECTING = "DETECTING"
 
 # ============================================================================
 # LOGGING SETUP
@@ -361,57 +354,86 @@ class MQTTClient:
             return False
     
     def publish_bike_detected(self, bike_id=None):
-        """Publish bike detection event"""
+        """Publish bike detection event - Jakarta EE compatible format"""
         payload = {
+            "eventType": "BIKE_DETECTED",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "event": "bike_detected",
             "bikeId": bike_id,
+            "lockStatus": self.station_controller.motor.get_state().value,
             "timestamp": datetime.now().isoformat(),
-            "lockState": self.station_controller.motor.get_state().value
+            "metadata": {
+                "source": "iot_station",
+                "version": "1.0"
+            }
         }
         self.publish(Topics.BIKE_DETECTED, payload)
     
     def publish_bike_removed(self):
-        """Publish bike removal event"""
+        """Publish bike removal event - Jakarta EE compatible format"""
         payload = {
+            "eventType": "BIKE_REMOVED",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "event": "bike_removed",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "metadata": {
+                "source": "iot_station",
+                "version": "1.0"
+            }
         }
         self.publish(Topics.BIKE_REMOVED, payload)
     
     def publish_lock_status(self, state, success=True):
-        """Publish lock status change"""
+        """Publish lock status change - Jakarta EE compatible format"""
         payload = {
+            "eventType": "LOCK_STATUS_CHANGE",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "lockState": state.value,
+            "lockStatus": state.value,
             "success": success,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "metadata": {
+                "source": "iot_station",
+                "version": "1.0"
+            }
         }
         self.publish(Topics.LOCK_STATUS, payload)
     
     def publish_status(self):
-        """Publish current station status"""
+        """Publish current station status - Jakarta EE compatible format"""
         payload = {
+            "eventType": "STATION_STATUS",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "bikePresent": self.station_controller.sensor.is_bike_present(),
-            "lockState": self.station_controller.motor.get_state().value,
+            "status": {
+                "bikePresent": self.station_controller.sensor.is_bike_present(),
+                "lockState": self.station_controller.motor.get_state().value,
+                "operational": True,
+                "uptime": round(time.time() - self.station_controller.start_time, 2)
+            },
             "timestamp": datetime.now().isoformat(),
-            "uptime": time.time() - self.station_controller.start_time
+            "metadata": {
+                "source": "iot_station",
+                "version": "1.0"
+            }
         }
         self.publish(Topics.STATUS, payload)
     
     def publish_error(self, error_message):
-        """Publish error event"""
+        """Publish error event - Jakarta EE compatible format"""
         payload = {
+            "eventType": "ERROR",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "error": error_message,
-            "timestamp": datetime.now().isoformat()
+            "error": {
+                "message": error_message,
+                "severity": "HIGH"
+            },
+            "timestamp": datetime.now().isoformat(),
+            "metadata": {
+                "source": "iot_station",
+                "version": "1.0"
+            }
         }
         self.publish(Topics.ERROR, payload)
     
@@ -483,7 +505,7 @@ class StationController:
                 
                 # Bike just arrived
                 if bike_detected and not self.bike_present:
-                    logger.info("🚲 BIKE DETECTED IN DOCK!")
+                    logger.info(" BIKE DETECTED IN DOCK!")
                     
                     # Wait for stable detection
                     if self.sensor.wait_for_stable_detection():
@@ -491,16 +513,23 @@ class StationController:
                 
                 # Bike just removed
                 elif not bike_detected and self.bike_present:
-                    logger.info("🚲 BIKE REMOVED FROM DOCK")
+                    logger.info(" BIKE REMOVED FROM DOCK")
                     self.handle_bike_removal()
                 
                 # Send periodic heartbeat
                 if current_time - last_heartbeat > heartbeat_interval:
-                    self.mqtt.publish(Topics.HEARTBEAT, {
+                    heartbeat_payload = {
+                        "eventType": "HEARTBEAT",
                         "stationId": Config.STATION_ID,
+                        "dockId": Config.DOCK_ID,
                         "timestamp": datetime.now().isoformat(),
-                        "uptime": current_time - self.start_time
-                    })
+                        "uptime": round(current_time - self.start_time, 2),
+                        "metadata": {
+                            "source": "iot_station",
+                            "version": "1.0"
+                        }
+                    }
+                    self.mqtt.publish(Topics.HEARTBEAT, heartbeat_payload)
                     last_heartbeat = current_time
                 
                 # Sleep before next check
