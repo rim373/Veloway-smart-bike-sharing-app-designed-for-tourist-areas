@@ -35,9 +35,9 @@ public class Bike{
         this.serialNumber = SerialNumber;
     }
 
-    public Integer getBatteryLevel{ return batteryLevel}
+    public Integer getBatteryLevel{ return batteryLevel;}
 
     public boolean checkAvailability {
-        return .
+        return ;
     }
 }

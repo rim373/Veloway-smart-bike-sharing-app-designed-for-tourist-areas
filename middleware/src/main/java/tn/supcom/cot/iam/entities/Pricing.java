@@ -22,7 +22,7 @@ public class Pricing{
         DISTANCE
     }
 
-    public String getPricingId {
+    public String getPricingId() {
         return pricingId;
     }
 

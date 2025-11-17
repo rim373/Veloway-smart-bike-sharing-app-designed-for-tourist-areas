@@ -5,6 +5,7 @@ import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
 import java.time.LocalDateTime;
+import java.time.Duration;
 
 @Entity
 public class Rental{
@@ -36,6 +37,15 @@ public class Rental{
     @Column
     private String paymentId; //Lien avec payment
 
+    @Column
+    private String userId; //lien avec user
+
+    @Column
+    private String startStationId; // start station
+
+    @Column
+    private String endStationId; // end station
+
     public String getRentalId() {
         return RentalId;
     }
@@ -63,6 +73,12 @@ public class Rental{
 
     public String getPaymentId() {return paymentId;}
 
+    public String getUserId() {return userId;}
+
+    public String getStartStationId() {return startStationId;}
+
+    public String getEndStationId() {return endStationId;}
+
     public void setBikeId(String bikeId) {this.bikeId = bikeId;}
 
     public void setDistanceTraveled(Float distanceTraveled) {
@@ -70,9 +86,19 @@ public class Rental{
 
     public void setFinalPhoto(String FinalPhoto) { this.finalPhoto = FinalPhoto; }
 
-    public void setInitialPhoto(String InitialPhoto) { this.finalPhoto = InitialPhoto; }
+    public void setInitialPhoto(String InitialPhoto) { this.initialPhoto = InitialPhoto; }
 
     public void setPaymentId(String PaymentId) { this.paymentId = PaymentId; }
+
+    public void setStartDateTime(LocalDateTime StartDateTime) { this.StartDateTime = StartDateTime; }
+
+    public void setEndDateTime(LocalDateTime EndDateTime) { this.EndDateTime = EndDateTime; }
+
+    public void setUserId(String UserId) { this.userId = UserId; }
+
+    public void setStartStationId(String StartStationId) { this.startStationId = StartStationId; }
+
+    public void setEndStationId(String EndStationId) { this.endStationId = EndStationId; }
 
     public boolean StartRental(){
         if (this.StartDateTime == null) {

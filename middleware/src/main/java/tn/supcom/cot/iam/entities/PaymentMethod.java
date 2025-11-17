@@ -18,9 +18,10 @@ public class PaymentMethod {
     @Column
     private LocalDate expirationDate;
 
-    public String getPaymentMethodId {
-        return paymentMethodId;
-    }
+    @Column
+    private String userId;
+
+    public String getPaymentMethodId() { return paymentMethodId;}
 
     public String getCardNumber() {
         return cardNumber;
@@ -31,7 +32,7 @@ public class PaymentMethod {
     public void setCardNumber(String cardNumber) {
         this.cardNumber = cardNumber;
     }
-    public void setExpirationDate(Date expirationDate) {
+    public void setExpirationDate(LocalDate expirationDate) {
         this.expirationDate = expirationDate;
     }
 

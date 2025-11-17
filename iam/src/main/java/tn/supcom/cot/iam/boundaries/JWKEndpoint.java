@@ -1,4 +1,4 @@
-ackage tn.supcom.cot.iam.boundaries;
+package tn.supcom.cot.iam.boundaries;
 
 import jakarta.ejb.EJB;
 import jakarta.enterprise.context.ApplicationScoped;

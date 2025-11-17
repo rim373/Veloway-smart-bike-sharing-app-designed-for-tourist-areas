@@ -76,7 +76,7 @@ public class Payment{
     }
 
     public boolean refund(){
-        if (this.datetime != null && this.amount != null && this.amount > 0 && this.transactionReference != null ){
+        if (this.dateTime != null && this.amount != null && this.amount > 0 && this.transactionReference != null ){
             this.amount = 0f;
             this.transactionReference = null;
             this.dateTime = LocalDateTime.now();
