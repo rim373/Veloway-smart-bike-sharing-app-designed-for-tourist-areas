@@ -4,29 +4,31 @@ package tn.supcom.cot.iam.entities;
 import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
+
+import java.util.UUID;
 
 @Entity
 public class Rental{
 
     @Id
-    private String RentalId;
+    private String rentalId;
 
     @Column
-    private LocalDateTime StartDateTime;
+    private LocalDateTime startDateTime;
 
     @Column
-    private LocalDateTime EndDateTime;
+    private LocalDateTime endDateTime;
 
     @Column
-    private Integer Duration;
+    private Integer duration;
 
     @Column
     private Float distanceTraveled;
 
     @Column
-    private String bikeId; //Lien avec bike
+    private String bikeId; //Link with bike
 
     @Column
     private String initialPhoto;
@@ -35,10 +37,10 @@ public class Rental{
     private String finalPhoto;
 
     @Column
-    private String paymentId; //Lien avec payment
+    private String paymentId; //Link with payment
 
     @Column
-    private String userId; //lien avec user
+    private String userId; //link with user
 
     @Column
     private String startStationId; // start station
@@ -46,76 +48,130 @@ public class Rental{
     @Column
     private String endStationId; // end station
 
+    @Column
+    private String rentalStatus;
+
+    @Column
+    private Float totalPrice;
+
+    //ID Generation
+    public void generateId() {
+        if (this.rentalId == null || this.rentalId.isEmpty()) {
+            this.rentalId = "RENTAL-" + UUID.randomUUID().toString();
+        }
+    }
+
     public String getRentalId() {
-        return RentalId;
+        return rentalId;
+    }
+
+    public void setRentalId(String rentalId) {
+        this.rentalId = rentalId;
     }
 
     public LocalDateTime getStartDateTime() {
-        return StartDateTime;
+        return startDateTime;
+    }
+
+    public void setStartDateTime(LocalDateTime startDateTime) {
+        this.startDateTime = startDateTime;
     }
 
     public LocalDateTime getEndDateTime() {
-        return EndDateTime;
+        return endDateTime;
+    }
+
+    public void setEndDateTime(LocalDateTime endDateTime) {
+        this.endDateTime = endDateTime;
     }
 
     public Integer getDuration() {
-        return Duration;
+        return duration;
     }
 
-    public String getBikeId() {return bikeId;}
-
-    public Float getDistanceTraveled() {return distanceTraveled;
+    public void setDuration(Integer duration) {
+        this.duration = duration;
     }
 
-    public String getInitialPhoto() {return initialPhoto;}
-
-    public String getFinalPhoto() {return finalPhoto;}
-
-    public String getPaymentId() {return paymentId;}
-
-    public String getUserId() {return userId;}
-
-    public String getStartStationId() {return startStationId;}
-
-    public String getEndStationId() {return endStationId;}
-
-    public void setBikeId(String bikeId) {this.bikeId = bikeId;}
+    public Float getDistanceTraveled() {
+        return distanceTraveled;
+    }
 
     public void setDistanceTraveled(Float distanceTraveled) {
-        this.distanceTraveled = distanceTraveled;}
-
-    public void setFinalPhoto(String FinalPhoto) { this.finalPhoto = FinalPhoto; }
-
-    public void setInitialPhoto(String InitialPhoto) { this.initialPhoto = InitialPhoto; }
-
-    public void setPaymentId(String PaymentId) { this.paymentId = PaymentId; }
-
-    public void setStartDateTime(LocalDateTime StartDateTime) { this.StartDateTime = StartDateTime; }
-
-    public void setEndDateTime(LocalDateTime EndDateTime) { this.EndDateTime = EndDateTime; }
-
-    public void setUserId(String UserId) { this.userId = UserId; }
-
-    public void setStartStationId(String StartStationId) { this.startStationId = StartStationId; }
-
-    public void setEndStationId(String EndStationId) { this.endStationId = EndStationId; }
-
-    public boolean StartRental(){
-        if (this.StartDateTime == null) {
-            this.StartDateTime = LocalDateTime.now();
-            return true;
-        }
-        return false;
+        this.distanceTraveled = distanceTraveled;
     }
 
-    public boolean EndRental(){
-        if (this.StartDateTime != null && this.EndDateTime == null ) {
-            this.EndDateTime = LocalDateTime.now();
-            this.Duration = (int) Duration.between(this.StartDateTime, this.EndDateTime).toMinutes();
-            return true;
-        }
-        return false;
+    public String getBikeId() {
+        return bikeId;
     }
 
-    public Float calculateAmount(){}
+    public void setBikeId(String bikeId) {
+        this.bikeId = bikeId;
+    }
+
+    public String getInitialPhoto() {
+        return initialPhoto;
+    }
+
+    public void setInitialPhoto(String initialPhoto) {
+        this.initialPhoto = initialPhoto;
+    }
+
+    public String getFinalPhoto() {
+        return finalPhoto;
+    }
+
+    public void setFinalPhoto(String finalPhoto) {
+        this.finalPhoto = finalPhoto;
+    }
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getStartStationId() {
+        return startStationId;
+    }
+
+    public void setStartStationId(String startStationId) {
+        this.startStationId = startStationId;
+    }
+
+    public String getEndStationId() {
+        return endStationId;
+    }
+
+    public void setEndStationId(String endStationId) {
+        this.endStationId = endStationId;
+    }
+
+    public String getRentalStatus() {
+        return rentalStatus;
+    }
+
+    public void setRentalStatus(String status) {
+        this.rentalStatus = status;
+    }
+
+    public Float getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(Float totalAmount) {
+        this.totalPrice = totalAmount;
+    }
+
+
 }

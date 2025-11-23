@@ -5,6 +5,7 @@ import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 public class Payment{
@@ -27,61 +28,57 @@ public class Payment{
     @Column
     private String pricingId;
 
-    public String getPaymentId {
+    public String getPaymentId() {
         return paymentId;
     }
 
-    public LocalDateTime getDateTime(){
-        return dateTime;
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
     }
 
-    public Float getAmount(){
+    public Float getAmount() {
         return amount;
     }
 
-    public String getTransactionReference(){
+    public void setAmount(Float amount) {
+        this.amount = amount;
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    public String getTransactionReference() {
         return transactionReference;
     }
 
-    public String getPaymentMethodId() {return paymentMethodId;}
-
-    public String getPricingId() {return pricingId;}
-
-    public void setAmount(Float Amount){
-        this.amount = Amount;
+    public void setTransactionReference(String transactionReference) {
+        this.transactionReference = transactionReference;
     }
 
-    public void setDateTime( LocalDateTime DateTime){
-        this.dateTime = DateTime;
+    public String getPaymentMethodId() {
+        return paymentMethodId;
     }
 
-    public void setTransactionReference(String TransactionReference){
-        this.transactionReference = TransactionReference;
+    public void setPaymentMethodId(String paymentMethodId) {
+        this.paymentMethodId = paymentMethodId;
     }
 
-    public void setPaymentMethodId(String PaymentMethodId){
-        this.paymentMethodId = PaymentMethodId;
+    public String getPricingId() {
+        return pricingId;
     }
 
-    public void setPricingId(String PricingId){
-        this.pricingId = PricingId;
+    public void setPricingId(String pricingId) {
+        this.pricingId = pricingId;
     }
 
-    public boolean processPayment(){
-        if ( this.amount != null && this.amount > 0 && this.transactionReference == null){
-            this.dateTime = LocalDateTime.now();
-            return true;
+    public void generateId() {
+        if (this.paymentId == null || this.paymentId.isEmpty()) {
+            this.paymentId = "PAY-" + UUID.randomUUID().toString();
         }
-        return false;
-    }
-
-    public boolean refund(){
-        if (this.dateTime != null && this.amount != null && this.amount > 0 && this.transactionReference != null ){
-            this.amount = 0f;
-            this.transactionReference = null;
-            this.dateTime = LocalDateTime.now();
-            return true;
-        }
-        return false;
     }
 }
