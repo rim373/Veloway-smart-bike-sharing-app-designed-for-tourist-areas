@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 // 🔹 Interfaces
 // ==============================
 export interface Station {
-  id: string;
+  _id: string;
   name: string;
   address: string;
   location: { lat: number; lng: number };
@@ -38,9 +38,9 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Récupération de la position utilisateur
+  // 🔹 Récupération de la position utilisateur
   useEffect(() => {
-    if (typeof window === "undefined") return; // 🔥 Empêche l’exécution côté serveur
+    if (typeof window === "undefined") return;
 
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -50,61 +50,51 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
             lng: position.coords.longitude,
           });
         },
-        (error) => {
-          console.warn("⚠️ Géolocalisation refusée :", error.message);
-          // 📍 Par défaut : Tunis
+        () => {
+          // 📍 Valeur par défaut si géolocalisation refusée
           setUserLocation({ lat: 36.8065, lng: 10.1815 });
         }
       );
     } else {
-      // 📍 Si géolocalisation non supportée
       setUserLocation({ lat: 36.8065, lng: 10.1815 });
     }
   }, []);
 
-  // ✅ Chargement (mock) des stations
+  // 🔹 Chargement des stations depuis l'API et conversion GeoJSON → Leaflet
   const fetchStations = async () => {
     try {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 600)); // simulation API
+      const res = await fetch("/api/stations"); // API Next.js
+      if (!res.ok) throw new Error("Erreur API");
 
-      const mockStations: Station[] = [
-        {
-          id: "1",
-          name: "Lac 1",
-          address: "123 Main Street",
-          location: { lat: 36.8028, lng: 10.1786 },
-          availableBikes: 8,
-          freeSlots: 5,
-          totalSlots: 15,
-        },
-        {
-          id: "2",
-          name: "Cité Olympique",
-          address: "Avenue Mohamed 5",
-          location: { lat: 36.8351, lng: 10.1923 },
-          availableBikes: 12,
-          freeSlots: 3,
-          totalSlots: 15,
-        },
-        {
-          id: "3",
-          name: "La Marsa",
-          address: "Rue de la Corniche",
-          location: { lat: 36.8786, lng: 10.3247 },
-          availableBikes: 9,
-          freeSlots: 6,
-          totalSlots: 15,
-        },
-      ];
+      const dataFromApi = await res.json();
 
-      setStations(mockStations);
+      // 🔹 Transformation GeoJSON → {lat, lng}
+      const stations: Station[] = dataFromApi.map((station: any) => ({
+        _id: station._id,
+        name: station.name,
+        address: station.address,
+        location: {
+          lat: station.location.coordinates[1], // latitude
+          lng: station.location.coordinates[0], // longitude
+        },
+        availableBikes: station.availableBikes,
+        freeSlots: station.freeSlots,
+        totalSlots: station.totalSlots,
+      }));
+
+      setStations(stations);
     } catch (error) {
       console.error("❌ Échec du chargement des stations :", error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // 🔹 Fetch au montage
+  useEffect(() => {
+    fetchStations();
+  }, []);
 
   return (
     <MapContext.Provider
@@ -120,9 +110,6 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
 // ==============================
 export function useMap() {
   const context = useContext(MapContext);
-  if (context === undefined) {
-    throw new Error("useMap must be used within a MapProvider");
-  }
+  if (!context) throw new Error("useMap must be used within a MapProvider");
   return context;
 }
-
