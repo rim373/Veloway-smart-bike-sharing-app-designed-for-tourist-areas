@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-interface User {
+export interface User {
   _id: string;
   email: string;
   fullName: string;
@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [allUsers, setAllUsers] = useState<User[]>([]); // pour récupérer tous les users si nécessaire
 
   // 🔹 Charger l'état auth depuis localStorage
   useEffect(() => {
@@ -37,7 +38,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  // 🔹 Login réel via API
+  // 🔹 Charger tous les utilisateurs depuis l'API (facultatif selon besoin)
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("/api/users");
+        if (!res.ok) throw new Error("Erreur API users");
+        const data: User[] = await res.json();
+        setAllUsers(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // 🔹 Login via API
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -46,13 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       if (!res.ok) throw new Error("Login failed");
-
       const data = await res.json();
+
       setUser(data.user);
       setToken(data.token);
-
       localStorage.setItem("auth_user", JSON.stringify(data.user));
       localStorage.setItem("auth_token", data.token);
     } finally {
@@ -69,13 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, fullName, phone }),
       });
-
       if (!res.ok) throw new Error("Registration failed");
-
       const data = await res.json();
+
       setUser(data.user);
       setToken(data.token);
-
       localStorage.setItem("auth_user", JSON.stringify(data.user));
       localStorage.setItem("auth_token", data.token);
     } finally {
