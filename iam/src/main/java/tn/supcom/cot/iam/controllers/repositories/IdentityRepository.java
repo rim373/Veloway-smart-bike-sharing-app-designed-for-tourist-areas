@@ -4,7 +4,6 @@ import jakarta.data.repository.By;
 import jakarta.data.repository.CrudRepository;
 import jakarta.data.repository.Find;
 import jakarta.data.repository.Repository;
-import tn.supcom.cot.iam.entities.Identity;
 import tn.supcom.cot.iam.entities.Tenant;
 
 import java.util.Optional;

@@ -5,8 +5,17 @@ import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
 import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.UUID;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 
 @Entity
 public class PaymentMethod {
@@ -31,7 +40,7 @@ public class PaymentMethod {
             this.paymentMethodId = "PMT-" + UUID.randomUUID().toString();
         }
     }
-
+/*
     public String getPaymentMethodId() {
         return paymentMethodId;
     }
@@ -73,5 +82,5 @@ public class PaymentMethod {
         this.cardType = cardType;
     }
 
-
+*/
 }
