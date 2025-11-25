@@ -3,3 +3,4 @@ data/
 notebooks/.env
 **/.env
 **/models/
+src/train/model_training.ipynb
