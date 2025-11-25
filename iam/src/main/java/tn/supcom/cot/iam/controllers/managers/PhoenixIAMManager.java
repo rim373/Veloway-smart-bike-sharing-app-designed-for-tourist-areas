@@ -8,7 +8,6 @@ import tn.supcom.cot.iam.controllers.repositories.IdentityRepository;
 import tn.supcom.cot.iam.controllers.repositories.TenantRepository;
 import tn.supcom.cot.iam.entities.Grant;
 import tn.supcom.cot.iam.entities.GrantPK;
-import tn.supcom.cot.iam.entities.Identity;
 import tn.supcom.cot.iam.entities.Tenant;
 
 import java.util.HashSet;

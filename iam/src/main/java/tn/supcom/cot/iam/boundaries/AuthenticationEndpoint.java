@@ -21,7 +21,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import tn.supcom.cot.iam.controllers.managers.PhoenixIAMManager;
 import tn.supcom.cot.iam.entities.Grant;
-import tn.supcom.cot.iam.entities.Identity;
 import tn.supcom.cot.iam.security.Argon2Utility;
 import tn.supcom.cot.iam.security.AuthorizationCode;
 
