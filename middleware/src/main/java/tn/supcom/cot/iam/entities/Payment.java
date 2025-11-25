@@ -5,7 +5,17 @@ import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 
 @Entity
 public class Payment{
@@ -28,6 +38,13 @@ public class Payment{
     @Column
     private String pricingId;
 
+
+    public void generateId() {
+        if (this.paymentId == null || this.paymentId.isEmpty()) {
+            this.paymentId = "PAY-" + UUID.randomUUID().toString();
+        }
+    }
+    /*
     public String getPaymentId() {
         return paymentId;
     }
@@ -75,10 +92,6 @@ public class Payment{
     public void setPricingId(String pricingId) {
         this.pricingId = pricingId;
     }
+    */
 
-    public void generateId() {
-        if (this.paymentId == null || this.paymentId.isEmpty()) {
-            this.paymentId = "PAY-" + UUID.randomUUID().toString();
-        }
-    }
 }

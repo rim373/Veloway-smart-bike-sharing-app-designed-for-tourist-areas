@@ -7,6 +7,18 @@ import jakarta.nosql.Entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+
 @Entity
 public class Maintenance {
     @Id
@@ -29,7 +41,7 @@ public class Maintenance {
             this.maintenanceId = "MNT-" + UUID.randomUUID().toString();
         }
     }
-
+    /*
     public String getMaintenanceId() {
         return maintenanceId;
     }
@@ -69,5 +81,5 @@ public class Maintenance {
     public void setDescription(String description) {
         this.description = description;
     }
-
+*/
 }

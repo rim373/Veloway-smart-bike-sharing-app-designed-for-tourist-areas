@@ -4,11 +4,19 @@ package tn.supcom.cot.iam.entities;
 import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
-import java.time.Duration;
+
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Rental{
 
@@ -61,53 +69,30 @@ public class Rental{
         }
     }
 
-    public String getRentalId() {
-        return rentalId;
-    }
+    //public String getRentalId() {return rentalId;}
 
-    public void setRentalId(String rentalId) {
-        this.rentalId = rentalId;
-    }
+    //public void setRentalId(String rentalId) {this.rentalId = rentalId;}
 
-    public LocalDateTime getStartDateTime() {
-        return startDateTime;
-    }
+    //public LocalDateTime getStartDateTime() {return startDateTime;}
 
-    public void setStartDateTime(LocalDateTime startDateTime) {
-        this.startDateTime = startDateTime;
-    }
+    //public void setStartDateTime(LocalDateTime startDateTime) {this.startDateTime = startDateTime;}
 
-    public LocalDateTime getEndDateTime() {
-        return endDateTime;
-    }
+    //public LocalDateTime getEndDateTime() {return endDateTime;}
 
-    public void setEndDateTime(LocalDateTime endDateTime) {
-        this.endDateTime = endDateTime;
-    }
+    //public void setEndDateTime(LocalDateTime endDateTime) {this.endDateTime = endDateTime;}
 
-    public Integer getDuration() {
-        return duration;
-    }
+    //public Integer getDuration() {return duration;}
 
-    public void setDuration(Integer duration) {
-        this.duration = duration;
-    }
+    //public void setDuration(Integer duration) {this.duration = duration;}
 
-    public Float getDistanceTraveled() {
-        return distanceTraveled;
-    }
+    //public Float getDistanceTraveled() {return distanceTraveled;}
 
-    public void setDistanceTraveled(Float distanceTraveled) {
-        this.distanceTraveled = distanceTraveled;
-    }
+    //public void setDistanceTraveled(Float distanceTraveled) {this.distanceTraveled = distanceTraveled;}
 
-    public String getBikeId() {
-        return bikeId;
-    }
+    //public String getBikeId() {return bikeId;}
+/*
 
-    public void setBikeId(String bikeId) {
-        this.bikeId = bikeId;
-    }
+    public void setBikeId(String bikeId) {this.bikeId = bikeId;}
 
     public String getInitialPhoto() {
         return initialPhoto;
@@ -173,5 +158,5 @@ public class Rental{
         this.totalPrice = totalAmount;
     }
 
-
+*/
 }

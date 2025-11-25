@@ -5,7 +5,17 @@ import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 
 @Entity
 public class Damage {
@@ -47,7 +57,7 @@ public class Damage {
             this.damageId = "DMG-" + UUID.randomUUID().toString();
         }
     }
-
+/*
     public String getDamageId() {
         return damageId;
     }
@@ -135,4 +145,5 @@ public class Damage {
     public void setRepairDate(LocalDateTime repairDate) {
         this.repairDate = repairDate;
     }
+    */
 }

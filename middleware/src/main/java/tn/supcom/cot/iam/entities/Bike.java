@@ -4,9 +4,17 @@ package tn.supcom.cot.iam.entities;
 import jakarta.nosql.Column;
 import jakarta.nosql.Entity;
 import jakarta.nosql.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Bike{
 
@@ -40,26 +48,26 @@ public class Bike{
 
 
     // Getters et Setters
-    public String getBikeId() { return bikeId; }
-    public void setBikeId(String bikeId) { this.bikeId = bikeId; }
+    //public String getBikeId() { return bikeId; }
+    //public void setBikeId(String bikeId) { this.bikeId = bikeId; }
 
-    public String getSerialNumber() { return serialNumber; }
-    public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
+    //public String getSerialNumber() { return serialNumber; }
+    //public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
 
-    public String getBrand() { return brand; }
-    public void setBrand(String brand) { this.brand = brand; }
+    //public String getBrand() { return brand; }
+    //public void setBrand(String brand) { this.brand = brand; }
 
-    public String getModel() { return model; }
-    public void setModel(String model) { this.model = model; }
+    //public String getModel() { return model; }
+    //public void setModel(String model) { this.model = model; }
 
-    public Integer getBatteryLevel() { return batteryLevel; }
-    public void setBatteryLevel(Integer batteryLevel) { this.batteryLevel = batteryLevel; }
+    //public Integer getBatteryLevel() { return batteryLevel; }
+    //public void setBatteryLevel(Integer batteryLevel) { this.batteryLevel = batteryLevel; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    //public String getStatus() { return status; }
+    //public void setStatus(String status) { this.status = status; }
 
-    public String getStationId() { return stationId; }
-    public void setStationId(String stationId) { this.stationId = stationId; }
+    //public String getStationId() { return stationId; }
+    //public void setStationId(String stationId) { this.stationId = stationId; }
 
 
 }
