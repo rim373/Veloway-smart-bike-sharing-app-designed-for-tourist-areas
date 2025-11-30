@@ -25,10 +25,10 @@ export default function Navigation() {
   }
 
   return (
-    <nav className="border-b border-border bg-card sticky top-0 z-40">
+    <nav className="border-b border-border bg-card z-40">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="font-bold text-xl text-primary">
-          Veloway
+          BikeHub
         </Link>
 
         <div className="flex gap-2 items-center">

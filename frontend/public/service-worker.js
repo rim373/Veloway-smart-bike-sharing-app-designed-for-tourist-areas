@@ -1,11 +1,14 @@
-const CACHE_NAME = "Veloway"
-const urlsToCache = ["/", "/manifest.json", "/favicon.ico"]
+const CACHE_NAME = "bikehub-v1"
+const urlsToCache = ["/", "/manifest.json", "/favicon.ico", "/globals.css", "/app-logo.svg"]
 
 // Install event
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache)
+      return cache.addAll(urlsToCache).catch(() => {
+        // Continue even if some files fail to cache
+        return Promise.resolve()
+      })
     }),
   )
   self.skipWaiting()
@@ -27,7 +30,7 @@ self.addEventListener("activate", (event) => {
   self.clients.claim()
 })
 
-// Fetch event
+// Fetch event with improved offline support
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
     return
@@ -52,6 +55,7 @@ self.addEventListener("fetch", (event) => {
         })
       })
       .catch(() => {
+        // Fallback for offline - return cached home page
         return caches.match("/")
       }),
   )

@@ -1,6 +1,6 @@
 {
-  "name": "Veloway - Bike Rental",
-  "short_name": "Veloway",
+  "name": "BikeHub - Bike Rental",
+  "short_name": "BikeHub",
   "description": "Modern bike rental app with real-time tracking and QR code access",
   "start_url": "/",
   "scope": "/",
@@ -10,22 +10,31 @@
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icon-192.jpg",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512.jpg",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-maskable.png",
+      "src": "/icon-maskable.jpg",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "categories": ["lifestyle", "productivity"],
+  "screenshots": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
     }
   ]
 }
