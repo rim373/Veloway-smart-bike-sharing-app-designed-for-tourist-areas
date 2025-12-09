@@ -3,59 +3,50 @@ import paho.mqtt.client as mqtt
 import json
 import time
 import logging
-import os
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
 # ============================================================================
-# CONFIGURATION
+# CONFIGURATION - CHANGE THESE VALUES
 # ============================================================================
 
 class Config:
     """System configuration"""
-    # Station Identity
-    STATION_ID = "station_001"
+    # Station Identity - MUST MATCH YOUR DATABASE
+    STATION_ID = "STATION-001"
     DOCK_ID = "dock_1"
     
-    # GPIO Pins
-    IR_SENSOR_PIN = 17      # BCM Pin 17 (Physical Pin 11)
-    MOTOR_PIN = 18          # BCM Pin 18 (Physical Pin 12) - PWM capable
-    
-    # Motor Settings (Servo)
-    MOTOR_FREQUENCY = 50    # 50Hz for standard servo
-    LOCK_ANGLE = 90         # Degrees for locked position
-    UNLOCK_ANGLE = 0        # Degrees for unlocked position
-    MOTOR_DUTY_LOCK = 7.5   # Duty cycle for 90° (locked)
-    MOTOR_DUTY_UNLOCK = 2.5 # Duty cycle for 0° (unlocked)
-    
-    # MQTT Settings
-    MQTT_BROKER = "broker.hivemq.com"
+    # MQTT Settings - CHANGE MQTT_BROKER TO YOUR SERVER IP
+    MQTT_BROKER = "192.168.1.1"  #  CHANGE THIS TO YOUR IOT GATEWAY IP
     MQTT_PORT = 1883
-    MQTT_USERNAME = None
-    MQTT_PASSWORD = None
+    MQTT_USERNAME = "veloway"
+    MQTT_PASSWORD = "veloway123"
     MQTT_KEEPALIVE = 60
     MQTT_QOS = 1
     
+    # GPIO Pins (Hardware connections)
+    IR_SENSOR_PIN = 17      # BCM Pin 17 - IR Sensor
+    MOTOR_PIN = 18          # BCM Pin 18 - Servo Motor (PWM)
+    
+    # Motor Settings (Servo configuration)
+    MOTOR_FREQUENCY = 50    # 50Hz for standard servo
+    MOTOR_DUTY_LOCK = 7.5   # Duty cycle for locked position (90°)
+    MOTOR_DUTY_UNLOCK = 2.5 # Duty cycle for unlocked position (0°)
+    MOTOR_TIMEOUT = 2       # Motor operation timeout (seconds)
+    
     # Sensor Settings
-    IR_DEBOUNCE_TIME = 0.5  # Seconds to wait before confirming detection
+    IR_DEBOUNCE_TIME = 0.5  # Wait time to confirm detection
     POLLING_INTERVAL = 0.1  # Check sensor every 100ms
     
-    # Simulation Mode (for testing without hardware)
-    SIMULATE_SENSOR = False  # Set True to simulate IR sensor
-    SIMULATE_MOTOR = False   # Set True to simulate motor
+    # Operation Settings
+    MAX_LOCK_ATTEMPTS = 3   # Retry lock operation this many times
+    HEARTBEAT_INTERVAL = 60 # Send heartbeat every 60 seconds
     
     # Logging
     LOG_LEVEL = logging.INFO
-    LOG_DIR = os.path.expanduser("~/wot-station/logs")
-    LOG_FILE = os.path.join(LOG_DIR, "station.log")
-    
-    # Heartbeat
-    HEARTBEAT_INTERVAL = 60  # Send heartbeat every 60 seconds
-    
-    # Status monitoring
-    MAX_LOCK_ATTEMPTS = 3    # Retry lock operation this many times
-    MOTOR_TIMEOUT = 2        # Motor operation timeout (seconds)
+    LOG_DIR = Path.home() / "veloway-station" / "logs"
+    LOG_FILE = LOG_DIR / "station.log"
 
 # ============================================================================
 # ENUMS
@@ -68,28 +59,23 @@ class LockState(Enum):
     LOCKING = "LOCKING"
     UNLOCKING = "UNLOCKING"
     ERROR = "ERROR"
-    UNKNOWN = "UNKNOWN"
 
 class BikeState(Enum):
     """Bike presence states"""
     PRESENT = "PRESENT"
     ABSENT = "ABSENT"
-    DETECTING = "DETECTING"
 
 # ============================================================================
 # LOGGING SETUP
 # ============================================================================
 
 def setup_logging():
-    """Configure logging system with auto-created directories"""
-    # Create log directory if it doesn't exist
-    log_dir = Path(Config.LOG_DIR)
-    log_dir.mkdir(parents=True, exist_ok=True)
+    """Configure logging system"""
+    Config.LOG_DIR.mkdir(parents=True, exist_ok=True)
     
-    # Configure logging
     logging.basicConfig(
         level=Config.LOG_LEVEL,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(Config.LOG_FILE),
             logging.StreamHandler()
@@ -108,18 +94,17 @@ class Topics:
     BASE = f"wot/station/{Config.STATION_ID}/dock/{Config.DOCK_ID}"
     
     # Publishing topics (Station -> Backend)
-    STATUS = f"{BASE}/status"
     BIKE_DETECTED = f"{BASE}/bike/detected"
     BIKE_REMOVED = f"{BASE}/bike/removed"
     LOCK_STATUS = f"{BASE}/lock/status"
     HEARTBEAT = f"{BASE}/heartbeat"
     ERROR = f"{BASE}/error"
+    STATUS = f"{BASE}/status"
     
     # Subscribing topics (Backend -> Station)
     COMMAND_UNLOCK = f"{BASE}/command/unlock"
     COMMAND_LOCK = f"{BASE}/command/lock"
     COMMAND_STATUS = f"{BASE}/command/status"
-    COMMAND_REBOOT = f"{BASE}/command/reboot"
 
 # ============================================================================
 # MOTOR CONTROLLER
@@ -130,77 +115,55 @@ class MotorController:
     
     def __init__(self):
         self.pwm = None
-        self.current_state = LockState.UNKNOWN
-        self.simulate = Config.SIMULATE_MOTOR
+        self.current_state = LockState.UNLOCKED
         self.setup()
     
     def setup(self):
         """Initialize motor GPIO"""
-        if self.simulate:
-            logger.info("  Motor in SIMULATION mode (no real hardware)")
-            self.current_state = LockState.UNLOCKED
-            return
-        
         try:
             GPIO.setup(Config.MOTOR_PIN, GPIO.OUT)
             self.pwm = GPIO.PWM(Config.MOTOR_PIN, Config.MOTOR_FREQUENCY)
             self.pwm.start(0)
-            self.current_state = LockState.UNLOCKED
-            logger.info(f"✓ Motor initialized on GPIO pin {Config.MOTOR_PIN}")
+            logger.info(f"✓ Motor initialized on GPIO {Config.MOTOR_PIN}")
         except Exception as e:
-            logger.error(f" Motor setup failed: {e}")
-            self.simulate = True
-            logger.warning("Falling back to simulation mode")
+            logger.error(f"✗ Motor setup failed: {e}")
+            raise
     
     def lock(self):
-        """Activate motor to lock position"""
+        """Lock the bike"""
         try:
-            logger.info(" Locking mechanism activating...")
+            logger.info("🔒 Locking...")
             self.current_state = LockState.LOCKING
             
-            if self.simulate:
-                time.sleep(1)  # Simulate motor movement
-                self.current_state = LockState.LOCKED
-                logger.info("✓ [SIMULATED] Bike locked")
-                return True
-            
-            # Move to lock position
             self.pwm.ChangeDutyCycle(Config.MOTOR_DUTY_LOCK)
             time.sleep(Config.MOTOR_TIMEOUT)
             self.pwm.ChangeDutyCycle(0)
             
             self.current_state = LockState.LOCKED
-            logger.info("✓ Bike locked successfully")
+            logger.info("✓ Locked")
             return True
             
         except Exception as e:
-            logger.error(f" Lock failed: {e}")
+            logger.error(f"✗ Lock failed: {e}")
             self.current_state = LockState.ERROR
             return False
     
     def unlock(self):
-        """Activate motor to unlock position"""
+        """Unlock the bike"""
         try:
-            logger.info(" Unlocking mechanism activating...")
+            logger.info("🔓 Unlocking...")
             self.current_state = LockState.UNLOCKING
             
-            if self.simulate:
-                time.sleep(1)
-                self.current_state = LockState.UNLOCKED
-                logger.info("✓ [SIMULATED] Bike unlocked")
-                return True
-            
-            # Move to unlock position
             self.pwm.ChangeDutyCycle(Config.MOTOR_DUTY_UNLOCK)
             time.sleep(Config.MOTOR_TIMEOUT)
             self.pwm.ChangeDutyCycle(0)
             
             self.current_state = LockState.UNLOCKED
-            logger.info("✓ Bike unlocked successfully")
+            logger.info("✓ Unlocked")
             return True
             
         except Exception as e:
-            logger.error(f" Unlock failed: {e}")
+            logger.error(f"✗ Unlock failed: {e}")
             self.current_state = LockState.ERROR
             return False
     
@@ -210,10 +173,9 @@ class MotorController:
     
     def cleanup(self):
         """Clean up motor resources"""
-        if self.pwm and not self.simulate:
+        if self.pwm:
             try:
                 self.pwm.stop()
-                logger.info("Motor controller cleaned up")
             except:
                 pass
 
@@ -226,79 +188,44 @@ class IRSensorController:
     
     def __init__(self):
         self.current_state = BikeState.ABSENT
-        self.simulate = Config.SIMULATE_SENSOR
-        self.simulated_bike_present = False  # For manual testing
         self.setup()
     
     def setup(self):
         """Initialize IR sensor GPIO"""
-        if self.simulate:
-            logger.info("  IR Sensor in SIMULATION mode (no real hardware)")
-            return
-        
         try:
             GPIO.setup(Config.IR_SENSOR_PIN, GPIO.IN)
-            test_read = GPIO.input(Config.IR_SENSOR_PIN)
-            logger.info(f"✓ IR Sensor initialized on GPIO {Config.IR_SENSOR_PIN}")
-            logger.info(f"  Initial state: {test_read}")
-            
+            state = GPIO.input(Config.IR_SENSOR_PIN)
+            logger.info(f"✓ IR Sensor initialized on GPIO {Config.IR_SENSOR_PIN} (state: {state})")
         except Exception as e:
-            logger.warning(f"  IR Sensor setup failed: {e}")
-            logger.info("Falling back to simulation mode")
-            self.simulate = True
+            logger.error(f"✗ IR Sensor setup failed: {e}")
+            raise
     
     def is_bike_present(self):
-        """
-        Check if bike is present
-        IR Sensor logic: HIGH (1) = bike detected, LOW (0) = no bike
-        """
-        if self.simulate:
-            return self.simulated_bike_present
-        
+        """Check if bike is present (HIGH = detected)"""
         try:
-            sensor_state = GPIO.input(Config.IR_SENSOR_PIN)
-            return sensor_state == GPIO.HIGH
+            return GPIO.input(Config.IR_SENSOR_PIN) == GPIO.HIGH
         except Exception as e:
-            logger.error(f"Error reading IR sensor: {e}")
+            logger.error(f"✗ Error reading sensor: {e}")
             return False
     
     def wait_for_stable_detection(self):
-        """
-        Wait for stable bike detection (debouncing)
-        Returns True if bike is stably detected
-        """
-        logger.info(" Waiting for stable bike detection...")
+        """Wait for stable bike detection (debouncing)"""
+        logger.info("⏳ Confirming detection...")
         time.sleep(Config.IR_DEBOUNCE_TIME)
         
         if self.is_bike_present():
-            logger.info("✓ Bike presence confirmed")
+            logger.info("✓ Detection confirmed")
             return True
         else:
-            logger.info("✗ False detection, bike not stable")
+            logger.info("✗ False detection")
             return False
-    
-    def simulate_bike_arrival(self):
-        """For testing: simulate bike arrival"""
-        if self.simulate:
-            self.simulated_bike_present = True
-            logger.info(" [TEST] Simulating bike arrival")
-    
-    def simulate_bike_removal(self):
-        """For testing: simulate bike removal"""
-        if self.simulate:
-            self.simulated_bike_present = False
-            logger.info(" [TEST] Simulating bike removal")
-    
-    def get_state(self):
-        """Get current bike presence state"""
-        return self.current_state
 
 # ============================================================================
 # MQTT CLIENT
 # ============================================================================
 
 class MQTTClient:
-    """Handles MQTT communication with backend"""
+    """Handles MQTT communication"""
     
     def __init__(self, station_controller):
         self.station_controller = station_controller
@@ -310,7 +237,7 @@ class MQTTClient:
         self.setup_callbacks()
     
     def setup_callbacks(self):
-        """Setup MQTT callback functions"""
+        """Setup MQTT callbacks"""
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
         self.client.on_message = self.on_message
@@ -325,66 +252,51 @@ class MQTTClient:
             logger.info(f"✓ Connected to MQTT: {Config.MQTT_BROKER}")
             
             # Subscribe to command topics
-            topics = [
-                Topics.COMMAND_UNLOCK,
-                Topics.COMMAND_LOCK,
-                Topics.COMMAND_STATUS,
-                Topics.COMMAND_REBOOT
-            ]
-            
+            topics = [Topics.COMMAND_UNLOCK, Topics.COMMAND_LOCK, Topics.COMMAND_STATUS]
             for topic in topics:
                 self.client.subscribe(topic, qos=Config.MQTT_QOS)
-                logger.info(f"  Subscribed to: {topic}")
+                logger.info(f"  → Subscribed: {topic}")
             
             # Publish initial status
             self.publish_status()
             
         else:
-            logger.error(f" MQTT connection failed with code {rc}")
+            logger.error(f"✗ MQTT connection failed (code {rc})")
             self.connected = False
     
     def on_disconnect(self, client, userdata, rc):
-        """Callback when disconnected from MQTT broker"""
+        """Callback when disconnected"""
         self.connected = False
         if rc != 0:
-            logger.warning(f"  Unexpected disconnection. Code: {rc}")
-        else:
-            logger.info("Disconnected from MQTT broker")
+            logger.warning(f"⚠️  Unexpected disconnection (code {rc})")
     
     def on_message(self, client, userdata, msg):
-        """Callback when message received from backend"""
+        """Callback when message received"""
         try:
             topic = msg.topic
             payload = msg.payload.decode()
-            logger.info(f" Received: {topic}")
+            logger.info(f"📩 Received: {topic}")
             
-            # Parse JSON payload
             try:
                 data = json.loads(payload) if payload else {}
             except json.JSONDecodeError:
-                data = {"raw": payload}
+                data = {}
             
             # Handle commands
             if topic == Topics.COMMAND_UNLOCK:
                 self.station_controller.handle_unlock_command(data)
-                
             elif topic == Topics.COMMAND_LOCK:
                 self.station_controller.handle_lock_command(data)
-                
             elif topic == Topics.COMMAND_STATUS:
                 self.publish_status()
-                
-            elif topic == Topics.COMMAND_REBOOT:
-                logger.warning("  Reboot command received")
-                self.station_controller.request_shutdown()
             
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
+            logger.error(f"✗ Error processing message: {e}")
     
     def connect(self):
         """Connect to MQTT broker"""
         try:
-            logger.info(f"Connecting to MQTT: {Config.MQTT_BROKER}:{Config.MQTT_PORT}")
+            logger.info(f"Connecting to {Config.MQTT_BROKER}:{Config.MQTT_PORT}...")
             self.client.connect(Config.MQTT_BROKER, Config.MQTT_PORT, Config.MQTT_KEEPALIVE)
             self.client.loop_start()
             
@@ -398,7 +310,7 @@ class MQTTClient:
                 raise Exception("Connection timeout")
                 
         except Exception as e:
-            logger.error(f"MQTT connection failed: {e}")
+            logger.error(f"✗ MQTT connection failed: {e}")
             raise
     
     def publish(self, topic, payload):
@@ -408,16 +320,10 @@ class MQTTClient:
                 payload = json.dumps(payload)
             
             result = self.client.publish(topic, payload, qos=Config.MQTT_QOS)
-            
-            if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                logger.debug(f" Published to {topic}")
-                return True
-            else:
-                logger.error(f"Publish failed to {topic}")
-                return False
+            return result.rc == mqtt.MQTT_ERR_SUCCESS
                 
         except Exception as e:
-            logger.error(f"Publish error: {e}")
+            logger.error(f"✗ Publish error: {e}")
             return False
     
     def publish_bike_detected(self, bike_id=None):
@@ -428,12 +334,7 @@ class MQTTClient:
             "dockId": Config.DOCK_ID,
             "bikeId": bike_id,
             "lockStatus": self.station_controller.motor.get_state().value,
-            "timestamp": datetime.now().isoformat(),
-            "metadata": {
-                "source": "iot_station",
-                "version": "1.1",
-                "simulation": Config.SIMULATE_SENSOR or Config.SIMULATE_MOTOR
-            }
+            "timestamp": datetime.now().isoformat()
         }
         self.publish(Topics.BIKE_DETECTED, payload)
     
@@ -443,11 +344,7 @@ class MQTTClient:
             "eventType": "BIKE_REMOVED",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "timestamp": datetime.now().isoformat(),
-            "metadata": {
-                "source": "iot_station",
-                "version": "1.1"
-            }
+            "timestamp": datetime.now().isoformat()
         }
         self.publish(Topics.BIKE_REMOVED, payload)
     
@@ -459,16 +356,12 @@ class MQTTClient:
             "dockId": Config.DOCK_ID,
             "lockStatus": state.value,
             "success": success,
-            "timestamp": datetime.now().isoformat(),
-            "metadata": {
-                "source": "iot_station",
-                "version": "1.1"
-            }
+            "timestamp": datetime.now().isoformat()
         }
         self.publish(Topics.LOCK_STATUS, payload)
     
     def publish_status(self):
-        """Publish current station status"""
+        """Publish current status"""
         payload = {
             "eventType": "STATION_STATUS",
             "stationId": Config.STATION_ID,
@@ -477,17 +370,9 @@ class MQTTClient:
                 "bikePresent": self.station_controller.sensor.is_bike_present(),
                 "lockState": self.station_controller.motor.get_state().value,
                 "operational": True,
-                "uptime": round(time.time() - self.station_controller.start_time, 2),
-                "simulation": {
-                    "sensor": Config.SIMULATE_SENSOR,
-                    "motor": Config.SIMULATE_MOTOR
-                }
+                "uptime": round(time.time() - self.station_controller.start_time, 2)
             },
-            "timestamp": datetime.now().isoformat(),
-            "metadata": {
-                "source": "iot_station",
-                "version": "1.1"
-            }
+            "timestamp": datetime.now().isoformat()
         }
         self.publish(Topics.STATUS, payload)
     
@@ -497,15 +382,8 @@ class MQTTClient:
             "eventType": "ERROR",
             "stationId": Config.STATION_ID,
             "dockId": Config.DOCK_ID,
-            "error": {
-                "message": error_message,
-                "severity": "HIGH"
-            },
-            "timestamp": datetime.now().isoformat(),
-            "metadata": {
-                "source": "iot_station",
-                "version": "1.1"
-            }
+            "error": {"message": error_message, "severity": "HIGH"},
+            "timestamp": datetime.now().isoformat()
         }
         self.publish(Topics.ERROR, payload)
     
@@ -513,7 +391,6 @@ class MQTTClient:
         """Disconnect from MQTT broker"""
         self.client.loop_stop()
         self.client.disconnect()
-        logger.info("MQTT client disconnected")
 
 # ============================================================================
 # MAIN STATION CONTROLLER
@@ -526,13 +403,12 @@ class StationController:
         self.start_time = time.time()
         self.running = False
         self.bike_present = False
-        self.shutdown_requested = False
         
         # Initialize GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
         
-        # Print startup banner
+        # Print banner
         self.print_banner()
         
         # Initialize components
@@ -540,15 +416,13 @@ class StationController:
         self.sensor = IRSensorController()
         self.mqtt = MQTTClient(self)
         
-        logger.info("✓ All components initialized successfully")
+        logger.info("✓ All components initialized\n")
     
     def print_banner(self):
         """Print startup banner"""
         logger.info("=" * 60)
-        logger.info("WOT BIKE STATION CONTROLLER v1.1")
-        logger.info(f"Station ID: {Config.STATION_ID}")
-        logger.info(f"Dock ID: {Config.DOCK_ID}")
-        logger.info(f"Mode: {'SIMULATION' if (Config.SIMULATE_SENSOR or Config.SIMULATE_MOTOR) else 'PRODUCTION'}")
+        logger.info("VELOWAY BIKE STATION CONTROLLER")
+        logger.info(f"Station: {Config.STATION_ID} | Dock: {Config.DOCK_ID}")
         logger.info("=" * 60)
     
     def start(self):
@@ -559,14 +433,14 @@ class StationController:
             
             # Start main loop
             self.running = True
-            logger.info("✓ Station controller started - monitoring for bikes...")
+            logger.info("✓ Station controller started\n")
             self.main_loop()
             
         except KeyboardInterrupt:
-            logger.info("\n  Shutdown requested by user")
+            logger.info("\n⚠️  Shutdown requested")
             self.stop()
         except Exception as e:
-            logger.error(f" Fatal error: {e}")
+            logger.error(f"✗ Fatal error: {e}")
             self.mqtt.publish_error(str(e))
             self.stop()
     
@@ -574,53 +448,47 @@ class StationController:
         """Main monitoring loop"""
         last_heartbeat = time.time()
         
-        while self.running and not self.shutdown_requested:
+        while self.running:
             try:
                 current_time = time.time()
                 
                 # Check bike presence
                 bike_detected = self.sensor.is_bike_present()
                 
-                # Bike just arrived
+                # Bike arrived
                 if bike_detected and not self.bike_present:
-                    logger.info(" BIKE DETECTED IN DOCK!")
-                    
+                    logger.info("\n🚴 BIKE DETECTED!")
                     if self.sensor.wait_for_stable_detection():
                         self.handle_bike_arrival()
                 
-                # Bike just removed
+                # Bike removed
                 elif not bike_detected and self.bike_present:
-                    logger.info(" BIKE REMOVED FROM DOCK")
+                    logger.info("\n🚴 BIKE REMOVED!")
                     self.handle_bike_removal()
                 
-                # Send periodic heartbeat
+                # Send heartbeat
                 if current_time - last_heartbeat > Config.HEARTBEAT_INTERVAL:
                     heartbeat_payload = {
                         "eventType": "HEARTBEAT",
                         "stationId": Config.STATION_ID,
                         "dockId": Config.DOCK_ID,
                         "timestamp": datetime.now().isoformat(),
-                        "uptime": round(current_time - self.start_time, 2),
-                        "metadata": {
-                            "source": "iot_station",
-                            "version": "1.1"
-                        }
+                        "uptime": round(current_time - self.start_time, 2)
                     }
                     self.mqtt.publish(Topics.HEARTBEAT, heartbeat_payload)
                     last_heartbeat = current_time
-                    logger.debug(" Heartbeat sent")
                 
-                # Sleep before next check
+                # Sleep
                 time.sleep(Config.POLLING_INTERVAL)
                 
             except Exception as e:
-                logger.error(f"Error in main loop: {e}")
+                logger.error(f"✗ Main loop error: {e}")
                 time.sleep(1)
     
     def handle_bike_arrival(self):
-        """Handle bike arrival at dock"""
+        """Handle bike arrival"""
         try:
-            # Lock the bike with retry logic
+            # Lock with retry
             attempts = 0
             success = False
             
@@ -629,87 +497,77 @@ class StationController:
                 attempts += 1
                 
                 if not success and attempts < Config.MAX_LOCK_ATTEMPTS:
-                    logger.warning(f"  Lock attempt {attempts} failed, retrying...")
+                    logger.warning(f"⚠️  Lock attempt {attempts} failed, retrying...")
                     time.sleep(1)
             
             if success:
                 self.bike_present = True
                 self.mqtt.publish_bike_detected()
                 self.mqtt.publish_lock_status(LockState.LOCKED, success=True)
-                logger.info("✓ Bike arrival processed successfully")
+                logger.info("✓ Bike secured\n")
             else:
-                logger.error(" Failed to lock bike after all attempts")
+                logger.error("✗ Failed to lock bike")
                 self.mqtt.publish_lock_status(LockState.ERROR, success=False)
-                self.mqtt.publish_error("Failed to lock bike after multiple attempts")
+                self.mqtt.publish_error("Failed to lock bike")
                 
         except Exception as e:
-            logger.error(f"Error handling bike arrival: {e}")
-            self.mqtt.publish_error(f"Bike arrival error: {str(e)}")
+            logger.error(f"✗ Bike arrival error: {e}")
+            self.mqtt.publish_error(str(e))
     
     def handle_bike_removal(self):
-        """Handle bike removal from dock"""
+        """Handle bike removal"""
         try:
             self.bike_present = False
             self.mqtt.publish_bike_removed()
             self.mqtt.publish_status()
-            logger.info(" Bike removal processed")
-            
+            logger.info("✓ Bike removal processed\n")
         except Exception as e:
-            logger.error(f"Error handling bike removal: {e}")
+            logger.error(f"✗ Bike removal error: {e}")
     
     def handle_unlock_command(self, data):
-        """Handle unlock command from backend"""
+        """Handle unlock command"""
         try:
-            logger.info(" Unlock command received from backend")
+            logger.info("\n🔓 UNLOCK COMMAND RECEIVED")
             
-            # Check if bike is present
             if not self.bike_present:
-                logger.warning("  No bike present to unlock")
+                logger.warning("⚠️  No bike to unlock")
                 self.mqtt.publish_lock_status(LockState.ERROR, success=False)
                 return
             
-            # Unlock the bike
             success = self.motor.unlock()
             
             if success:
                 self.mqtt.publish_lock_status(LockState.UNLOCKED, success=True)
-                logger.info("✓ Bike unlocked - ready for user")
+                logger.info("✓ Bike unlocked - ready for user\n")
             else:
-                logger.error(" Unlock failed")
+                logger.error("✗ Unlock failed")
                 self.mqtt.publish_lock_status(LockState.ERROR, success=False)
                 
         except Exception as e:
-            logger.error(f"Error handling unlock command: {e}")
-            self.mqtt.publish_error(f"Unlock error: {str(e)}")
+            logger.error(f"✗ Unlock error: {e}")
+            self.mqtt.publish_error(str(e))
     
     def handle_lock_command(self, data):
-        """Handle lock command from backend"""
+        """Handle lock command"""
         try:
-            logger.info(" Lock command received from backend")
-            
+            logger.info("\n🔒 LOCK COMMAND RECEIVED")
             success = self.motor.lock()
             
             if success:
                 self.mqtt.publish_lock_status(LockState.LOCKED, success=True)
-                logger.info("✓ Manual lock successful")
+                logger.info("✓ Bike locked\n")
             else:
-                logger.error(" Manual lock failed")
+                logger.error("✗ Lock failed")
                 self.mqtt.publish_lock_status(LockState.ERROR, success=False)
                 
         except Exception as e:
-            logger.error(f"Error handling lock command: {e}")
-    
-    def request_shutdown(self):
-        """Request graceful shutdown"""
-        logger.info("  Shutdown requested")
-        self.shutdown_requested = True
+            logger.error(f"✗ Lock error: {e}")
     
     def stop(self):
-        """Stop the station controller"""
-        logger.info("Shutting down station controller...")
+        """Stop the controller"""
+        logger.info("\nShutting down...")
         self.running = False
         
-        # Cleanup components
         try:
             self.motor.cleanup()
         except:
@@ -725,8 +583,8 @@ class StationController:
         except:
             pass
         
-        logger.info("✓ Station controller stopped")
-        logger.info("=" * 60)
+        logger.info("✓ Shutdown complete")
+        logger.info("=" * 60 + "\n")
 
 # ============================================================================
 # ENTRY POINT
@@ -738,7 +596,7 @@ def main():
         controller = StationController()
         controller.start()
     except Exception as e:
-        logger.error(f"Failed to start controller: {e}")
+        logger.error(f"✗ Failed to start: {e}")
         GPIO.cleanup()
         exit(1)
 
