@@ -1,4 +1,4 @@
-package tn.supcom.cot.iam.security;
+package middleware.src.main.java.tn.supcom.cot.iam.security;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;

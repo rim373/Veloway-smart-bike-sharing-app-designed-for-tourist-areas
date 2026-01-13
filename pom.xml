@@ -17,6 +17,7 @@
         <argon2.version>2.11</argon2.version>
         <jnosql.mongodb.version>1.1.10</jnosql.mongodb.version>
         <mongodb-driver-sync.version>5.6.0</mongodb-driver-sync.version>
+        <cloudinary-version>2.3.2</cloudinary-version>
     </properties>
     <packaging>war</packaging>
     <dependencies>
@@ -50,15 +51,57 @@
             <version>${mongodb-driver-sync.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.24</version>
-            <scope>provided</scope>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <version>3.1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>3.1.6</version>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http5</artifactId>
+            <version>${cloudinary-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+            <version>6.2.14.Final</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
-<build>
-    <finalName>iam-${project.version}</finalName>
-</build>
+    <build>
+        <finalName>iam-${project.version}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+                <configuration>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>5.0.0.Final</version>
+                <configuration>
+                    <hostname>localhost</hostname>
+                    <port>9990</port>
+                    <username>adminVeloway</username>
+                    <password>adminVeloway123!</password>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
 </project>

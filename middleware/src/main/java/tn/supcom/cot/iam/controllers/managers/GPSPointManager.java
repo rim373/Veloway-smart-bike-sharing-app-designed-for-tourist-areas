@@ -1,5 +1,6 @@
 package tn.supcom.cot.iam.controllers.managers;
 
+
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import tn.supcom.cot.iam.controllers.repositories.GPSPointRepository;

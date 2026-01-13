@@ -12,6 +12,9 @@ import tn.supcom.cot.iam.entities.Bike;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Path("/bikes")
 public class BikeEndpoint {
     @EJB

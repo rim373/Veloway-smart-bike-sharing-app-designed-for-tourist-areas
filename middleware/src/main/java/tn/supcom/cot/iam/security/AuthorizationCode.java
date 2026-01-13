@@ -1,4 +1,4 @@
-package tn.supcom.cot.iam.security;
+package middleware.src.main.java.tn.supcom.cot.iam.security;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;

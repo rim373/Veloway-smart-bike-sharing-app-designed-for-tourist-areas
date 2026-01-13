@@ -1,4 +1,4 @@
-package tn.supcom.cot.iam.security;
+package middleware.src.main.java.tn.supcom.cot.iam.security;
 
 import jakarta.annotation.Priority;
 import jakarta.annotation.security.DenyAll;

@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/iam-1.0/api'
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api'
 
 export const API_ENDPOINTS = {
   bikes: {
@@ -13,5 +13,9 @@ export const API_ENDPOINTS = {
     create: () => `${API_BASE_URL}/bikes`,
     update: (bikeId: string) => `${API_BASE_URL}/bikes/${bikeId}`,
     delete: (bikeId: string) => `${API_BASE_URL}/bikes/${bikeId}`,
+  },
+  stations: {
+    getAll: () => `${API_BASE_URL}/stations`,
+    getById: (stationId: string) => `${API_BASE_URL}/stations/${stationId}`,
   },
 }

@@ -1,4 +1,4 @@
-package tn.supcom.cot.iam.controllers;
+package middleware.src.main.java.tn.supcom.cot.iam.controllers;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 

@@ -4,6 +4,7 @@ import type { Bike } from '../types/bike'
 class BikeService {
   private async fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
     try {
+      console.log('🚴 Fetching from URL:', url)
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -12,13 +13,17 @@ class BikeService {
         ...options,
       })
 
+      console.log('📡 Response status:', response.status, response.statusText)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      return await response.json()
+      const data = await response.json()
+      console.log('✅ Data received:', data)
+      return data
     } catch (error) {
-      console.error('API call failed:', error)
+      console.error('❌ API call failed:', error)
       throw error
     }
   }

@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import { bikeService } from "./services/bike-service"
+import { stationService } from "./services/station-service"
 
 export interface Station {
   id: string
@@ -65,105 +66,48 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const fetchStations = async () => {
     try {
       setIsLoading(true)
-      // Simulate API call to Tunis backend
-      await new Promise((resolve) => setTimeout(resolve, 600))
 
-      const mockStations: Station[] = [
-        {
-          id: "1",
-          name: "Tunis Center Hub",
-          address: "Avenue Habib Bourguiba, Tunis",
-          location: { lat: 36.8065, lng: 10.1964 },
-          availableBikes: 8,
-          freeSlots: 5,
-          totalSlots: 15,
-        },
-        {
-          id: "2",
-          name: "Sfax Port Station",
-          address: "Avenue Mohamed Ali, Sfax",
-          location: { lat: 34.7407, lng: 10.7605 },
-          availableBikes: 12,
-          freeSlots: 3,
-          totalSlots: 15,
-        },
-        {
-          id: "3",
-          name: "Sousse Beach Hub",
-          address: "Boulevard de la Corniche, Sousse",
-          location: { lat: 35.825, lng: 10.6363 },
-          availableBikes: 14,
-          freeSlots: 1,
-          totalSlots: 15,
-        },
-        {
-          id: "4",
-          name: "Djerba Airport Station",
-          address: "Mellita, Djerba",
-          location: { lat: 33.8754, lng: 10.7511 },
-          availableBikes: 6,
-          freeSlots: 9,
-          totalSlots: 15,
-        },
-        {
-          id: "5",
-          name: "Gafsa Downtown",
-          address: "Rue de la Gare, Gafsa",
-          location: { lat: 34.4267, lng: 8.7867 },
-          availableBikes: 9,
-          freeSlots: 6,
-          totalSlots: 15,
-        },
-        {
-          id: "6",
-          name: "Kairouan Sacred City",
-          address: "Avenue Mohamed Ali, Kairouan",
-          location: { lat: 35.6708, lng: 9.9208 },
-          availableBikes: 11,
-          freeSlots: 4,
-          totalSlots: 15,
-        },
-        {
-          id: "7",
-          name: "Bizerte Harbor",
-          address: "Rue Menzel Jemil, Bizerte",
-          location: { lat: 37.2742, lng: 9.873 },
-          availableBikes: 7,
-          freeSlots: 8,
-          totalSlots: 15,
-        },
-        {
-          id: "8",
-          name: "Hammamet Resort",
-          address: "Avenue du Tourisme, Hammamet",
-          location: { lat: 36.3906, lng: 10.619 },
-          availableBikes: 13,
-          freeSlots: 2,
-          totalSlots: 15,
-        },
-      ]
+      // Fetch real stations and bikes from middleware
+      const [stationsFromAPI, allBikes] = await Promise.all([
+        stationService.getAllStations(),
+        bikeService.getAllBikes(),
+      ])
 
-      // Fetch real available bike counts from the middleware for each station
-      const stationsWithRealBikes = await Promise.all(
-        mockStations.map(async (station) => {
-          try {
-            const availableBikes = await bikeService.countAvailableBikesByStation(station.id)
-            return {
-              ...station,
-              availableBikes,
-              freeSlots: station.totalSlots - availableBikes,
-            }
-          } catch (error) {
-            console.error(`Failed to fetch bikes for station ${station.id}:`, error)
-            // Keep the mock data if the API call fails
-            return station
-          }
-        })
-      )
+      console.log('🏢 Stations from middleware:', stationsFromAPI)
+      console.log('🚴 All bikes from middleware:', allBikes)
 
-      setStations(stationsWithRealBikes)
+      // Group bikes by station and count available ones
+      const bikesByStation = allBikes.reduce((acc, bike) => {
+        if (!acc[bike.stationId]) {
+          acc[bike.stationId] = { total: 0, available: 0 }
+        }
+        acc[bike.stationId].total++
+        if (bike.status === 'AVAILABLE') {
+          acc[bike.stationId].available++
+        }
+        return acc
+      }, {} as Record<string, { total: number; available: number }>)
+
+      console.log('📊 Bikes by station:', bikesByStation)
+
+      // Convert API stations to frontend Station format
+      const stations: Station[] = stationsFromAPI.map((apiStation) => {
+        const bikeCounts = bikesByStation[apiStation.stationId] || { total: 0, available: 0 }
+        return {
+          id: apiStation.stationId,
+          name: apiStation.name,
+          address: apiStation.address,
+          location: { lat: apiStation.latitude, lng: apiStation.longitude },
+          availableBikes: bikeCounts.available,
+          freeSlots: apiStation.totalCapacity - bikeCounts.total,
+          totalSlots: apiStation.totalCapacity,
+        }
+      })
+
+      console.log('✅ Final stations with bike counts:', stations)
+      setStations(stations)
     } catch (error) {
-      console.error("Failed to fetch stations:", error)
+      console.error("❌ Failed to fetch stations:", error)
     } finally {
       setIsLoading(false)
     }

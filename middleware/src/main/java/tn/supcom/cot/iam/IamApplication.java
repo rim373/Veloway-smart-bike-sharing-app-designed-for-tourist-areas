@@ -1,4 +1,4 @@
-package tn.supcom.cot.iam;
+package tn.supcom.cot.iam.boundaries;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
