@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
+import { bikeService } from "./services/bike-service"
 
 export interface Station {
   id: string
@@ -17,9 +18,12 @@ interface MapContextType {
   stations: Station[]
   selectedStation: Station | null
   userLocation: { lat: number; lng: number } | null
+  mapCenter: { lat: number; lng: number } | null
   isLoading: boolean
   setSelectedStation: (station: Station | null) => void
+  setMapCenter: (center: { lat: number; lng: number }) => void
   fetchStations: () => Promise<void>
+  zoomToStation: (station: Station) => void
 }
 
 const MapContext = createContext<MapContextType | undefined>(undefined)
@@ -28,6 +32,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const [stations, setStations] = useState<Station[]>([])
   const [selectedStation, setSelectedStation] = useState<Station | null>(null)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   // Get user's current location
@@ -47,6 +52,15 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
       )
     }
   }, [])
+
+  const zoomToStation = (station: Station) => {
+    // Update map center to focus on the selected station
+    setMapCenter({
+      lat: station.location.lat,
+      lng: station.location.lng,
+    })
+    setSelectedStation(station)
+  }
 
   const fetchStations = async () => {
     try {
@@ -129,7 +143,25 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
         },
       ]
 
-      setStations(mockStations)
+      // Fetch real available bike counts from the middleware for each station
+      const stationsWithRealBikes = await Promise.all(
+        mockStations.map(async (station) => {
+          try {
+            const availableBikes = await bikeService.countAvailableBikesByStation(station.id)
+            return {
+              ...station,
+              availableBikes,
+              freeSlots: station.totalSlots - availableBikes,
+            }
+          } catch (error) {
+            console.error(`Failed to fetch bikes for station ${station.id}:`, error)
+            // Keep the mock data if the API call fails
+            return station
+          }
+        })
+      )
+
+      setStations(stationsWithRealBikes)
     } catch (error) {
       console.error("Failed to fetch stations:", error)
     } finally {
@@ -139,7 +171,17 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <MapContext.Provider
-      value={{ stations, selectedStation, userLocation, isLoading, setSelectedStation, fetchStations }}
+      value={{
+        stations,
+        selectedStation,
+        userLocation,
+        mapCenter,
+        isLoading,
+        setSelectedStation,
+        setMapCenter,
+        fetchStations,
+        zoomToStation
+      }}
     >
       {children}
     </MapContext.Provider>
