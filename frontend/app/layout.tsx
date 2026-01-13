@@ -10,6 +10,7 @@ import { RideProvider } from "@/lib/ride-context"
 import { RideHistoryProvider } from "@/lib/ride-history-context"
 import { PaymentProvider } from "@/lib/payment-context"
 import { NotificationsProvider } from "@/lib/notifications-context"
+import { BikeProvider } from "@/lib/bike-context"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -55,17 +56,19 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <AuthProvider>
           <MapProvider>
-            <RideProvider>
-              <RideHistoryProvider>
-                <PaymentProvider>
-                  <NotificationsProvider>
-                    <Navigation />
-                    {children}
-                    <Analytics />
-                  </NotificationsProvider>
-                </PaymentProvider>
-              </RideHistoryProvider>
-            </RideProvider>
+            <BikeProvider>
+              <RideProvider>
+                <RideHistoryProvider>
+                  <PaymentProvider>
+                    <NotificationsProvider>
+                      <Navigation />
+                      {children}
+                      <Analytics />
+                    </NotificationsProvider>
+                  </PaymentProvider>
+                </RideHistoryProvider>
+              </RideProvider>
+            </BikeProvider>
           </MapProvider>
         </AuthProvider>
       </body>

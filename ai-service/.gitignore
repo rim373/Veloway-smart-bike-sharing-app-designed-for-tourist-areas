@@ -2,5 +2,4 @@ data/
 .env
 notebooks/.env
 **/.env
-**/models/
-src/train/model_training.ipynb
+**/models/src/train/model_training.ipynb

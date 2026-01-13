@@ -23,10 +23,10 @@ export default function StationList({ stations, selectedStation, onSelectStation
     <div className="space-y-2 p-4">
       {stations.map((station) => (
         <div
-          key={station._id}
+          key={station.id}
           onClick={() => handleStationClick(station)}
           className={`p-4 rounded-lg cursor-pointer transition-all active:scale-95 ${
-            selectedStation?._id === station._id
+            selectedStation?.id === station.id
               ? "bg-accent/10 border-2 border-accent shadow-md"
               : "bg-muted border border-border hover:bg-muted/80 active:bg-muted/60"
           }`}
@@ -47,8 +47,8 @@ export default function StationList({ stations, selectedStation, onSelectStation
               </p>
             </div>
 
-            {selectedStation?._id === station._id && (
-              <Link href={`/ride?stationId=${station._id}`}>
+            {selectedStation?.id === station.id && (
+              <Link href={`/ride?stationId=${station.id}`}>
                 <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   Rent
                 </Button>

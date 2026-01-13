@@ -33,7 +33,7 @@ Veloway is an IoT-enabled smart bicycle rental system designed to provide eco-fr
 | Layer           | Technologies                                      |
 |-----------------|--------------------------------------------------|
 | Backend         | Jakarta EE, REST API, MongoDB                     |
-| Frontend        | React Native (mobile app), ReactJS (Backoffice)  |
+| Frontend        | Next.js (React Framework)
 | IoT Layer       | Raspberry Pi, sensors, GPS modules               |
 | AI Layer        | PyTorch for image-based damage detection         |
 | Middleware      | Apache Kafka for real-time data streaming        |
