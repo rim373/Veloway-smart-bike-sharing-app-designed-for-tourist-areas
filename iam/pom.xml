@@ -7,6 +7,7 @@
     <groupId>tn.supcom.cot.iam</groupId>
     <artifactId>cot-iam</artifactId>
     <version>1.0</version>
+    <packaging>war</packaging>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -18,40 +19,88 @@
         <jnosql.mongodb.version>1.1.10</jnosql.mongodb.version>
         <mongodb-driver-sync.version>5.6.0</mongodb-driver-sync.version>
     </properties>
-    <packaging>war</packaging>
+
     <dependencies>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
             <version>${jakartaee-api.version}</version>
             <scope>provided</scope>
-
         </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
             <version>${microprofile-config-api.version}</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>de.mkammerer</groupId>
             <artifactId>argon2-jvm</artifactId>
             <version>${argon2.version}</version>
-
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jnosql.databases</groupId>
             <artifactId>jnosql-mongodb</artifactId>
             <version>${jnosql.mongodb.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
             <version>${mongodb-driver-sync.version}</version>
         </dependency>
 
+
     </dependencies>
-<build>
-    <finalName>iam-${project.version}</finalName>
-</build>
+
+    <build>
+
+        <finalName>iam</finalName>
+
+        <plugins>
+            <!-- Plugin Compiler (Java 21) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin WildFly (Pour lancer le serveur) -->
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>5.0.1.Final</version>
+                <configuration>
+                    <!-- Permet de redéployer si déjà lancé -->
+                    <force>true</force>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

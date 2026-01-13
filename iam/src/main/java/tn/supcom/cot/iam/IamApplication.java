@@ -13,28 +13,34 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.logging.Logger;
 
-@ApplicationPath("/rest-iam")
+@ApplicationPath("/iam")
 public class IamApplication extends Application {
+
+    // --------------------------------------------------
+    // CDI CONFIGURATOR (classe interne)
+    // --------------------------------------------------
     @ApplicationScoped
-    public static final class CDIConfigurator {
+    public static class CDIConfigurator {
 
         @Inject
-        @ConfigProperty(name = "jwt.realm")
+        @ConfigProperty(name = "jwt.realm", defaultValue = "veloway-realm")
         private String realm;
 
         @Produces
-        @Named(value = "realm")
-        public String getRealm(){
+        @Named("realm")
+        public String getRealm() {
             return realm;
         }
 
         @Produces
         @Dependent
-        public Logger getLogger(InjectionPoint injectionPoint){
-            return Logger.getLogger(injectionPoint.getBean().getBeanClass().getName());
+        public Logger produceLogger(InjectionPoint injectionPoint) {
+            return Logger.getLogger(
+                    injectionPoint.getBean().getBeanClass().getName()
+            );
         }
 
-        public void disposeLogger(@Disposes Logger logger){
+        public void disposeLogger(@Disposes Logger logger) {
             logger.info("logger disposed!");
         }
     }
