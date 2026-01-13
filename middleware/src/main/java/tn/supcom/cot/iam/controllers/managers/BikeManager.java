@@ -15,11 +15,18 @@ public class BikeManager {
     private BikeRepository bikeRepository;
 
     public Set<Bike> getBikeByBikeId(String bikeId) {
-        return bikeRepository.findAll().collect(Collectors.toSet());
+        return bikeRepository.findById(bikeId)
+                .map(Set::of)
+                .orElse(Set.of());
     }
+
 
     public Set<Bike> getBikeByStationId(String stationId) {
         return bikeRepository.findByStationId(stationId).collect(Collectors.toSet());
+    }
+    public Set<Bike> getAllBikes() {
+        return bikeRepository.findAll()
+                .collect(Collectors.toSet());
     }
 
     public Set<Bike> getBikeByStatus(String status){
@@ -69,4 +76,14 @@ public class BikeManager {
                 .filter(bike -> bike.getBatteryLevel() != null && bike.getBatteryLevel() > 20)
                 .count();
     }
+
+    public boolean deleteBike(String bikeId) {
+        Optional<Bike> optBike = bikeRepository.findById(bikeId);
+        if (optBike.isPresent()) {
+            bikeRepository.deleteById(bikeId);
+            return true;
+        }
+        return false;
+    }
+
 }
