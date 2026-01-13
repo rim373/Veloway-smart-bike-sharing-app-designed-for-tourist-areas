@@ -37,30 +37,6 @@ public class Pricing{
             this.pricingId = "PRC-" + UUID.randomUUID().toString();
         }
     }
-    /*
-    public String getPricingId() {
-        return pricingId;
-    }
 
-    public void setPricingId(String pricingId) {
-        this.pricingId = pricingId;
-    }
-
-    public Float getPricePerMinute() {
-        return pricePerMinute;
-    }
-
-    public void setPricePerMinute(Float pricePerMinute) {
-        this.pricePerMinute = pricePerMinute;
-    }
-
-    public Float getPricePerKm() {
-        return pricePerKm;
-    }
-
-    public void setPricePerKm(Float pricePerKm) {
-        this.pricePerKm = pricePerKm;
-    }
-    */
 
 }

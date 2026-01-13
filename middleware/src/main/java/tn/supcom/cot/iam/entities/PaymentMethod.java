@@ -40,47 +40,5 @@ public class PaymentMethod {
             this.paymentMethodId = "PMT-" + UUID.randomUUID().toString();
         }
     }
-/*
-    public String getPaymentMethodId() {
-        return paymentMethodId;
-    }
 
-    public void setPaymentMethodId(String paymentMethodId) {
-        this.paymentMethodId = paymentMethodId;
-    }
-
-    public String getCardNumber() {
-        return cardNumber;
-    }
-
-    public void setCardNumber(String cardNumber) {
-        this.cardNumber = cardNumber;
-    }
-
-    public LocalDate getExpirationDate() {
-        return expirationDate;
-    }
-
-    public void setExpirationDate(LocalDate expirationDate) {
-        this.expirationDate = expirationDate;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-
-    public String getCardType() {
-        return cardType;
-    }
-
-    public void setCardType(String cardType) {
-        this.cardType = cardType;
-    }
-
-*/
 }
