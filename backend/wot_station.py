@@ -280,16 +280,13 @@ class Station:
     def publish_availability(self):
         """Publish how many docks are available"""
         available = sum(1 for d in self.docks.values() if not d.bike_present)
-        occupied = sum(1 for d in self.docks.values() if d.bike_present)
         
         topic = f"veloway/station/{Config.STATION_ID}/availability"
         payload = {
             "stationId": Config.STATION_ID,
-            "stationName": Config.STATION_NAME,
-            "totalDocks": len(self.docks),
-            "availableDocks": available,
-            "occupiedDocks": occupied,
-            "timestamp": datetime.now().isoformat()
+            "name": Config.STATION_NAME,
+            "totalCapacity": len(self.docks),
+            "availableBikes": available
         }
         
         self.mqtt.publish(topic, json.dumps(payload))
@@ -306,9 +303,7 @@ class Station:
         payload = {
             "bikeId": bike_id,
             "status": "DOCKED",
-            "stationId": Config.STATION_ID,
-            "dockId": dock_id,
-            "timestamp": datetime.now().isoformat()
+            "stationId": Config.STATION_ID
         }
         
         self.mqtt.publish(topic, json.dumps(payload))
@@ -323,9 +318,7 @@ class Station:
         payload = {
             "bikeId": bike_id,
             "status": "IN_USE",
-            "stationId": Config.STATION_ID,
-            "dockId": dock_id,
-            "timestamp": datetime.now().isoformat()
+            "stationId": Config.STATION_ID
         }
         
         self.mqtt.publish(topic, json.dumps(payload))
@@ -335,18 +328,29 @@ class Station:
         self.publish_availability()
     
     def publish_unlock_status(self, dock_id, success, rental_id, bike_id):
-        """Publish unlock status"""
-        topic = f"veloway/station/{Config.STATION_ID}/dock/{dock_id}/unlock_status"
-        payload = {
-            "stationId": Config.STATION_ID,
-            "dockId": dock_id,
-            "rentalId": rental_id,
-            "bikeId": bike_id,
-            "success": success,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        self.mqtt.publish(topic, json.dumps(payload))
+        """Publish unlock status - sends rental start event on success"""
+        if success and rental_id:
+            # Publish rental start event with Rental entity fields
+            topic = f"veloway/rental/{rental_id}/started"
+            payload = {
+                "rentalId": rental_id,
+                "bikeId": bike_id,
+                "startStationId": Config.STATION_ID,
+                "startDateTime": datetime.now().isoformat(),
+                "rentalStatus": "ACTIVE"
+            }
+            self.mqtt.publish(topic, json.dumps(payload))
+            logger.info(f" Rental {rental_id} started on dock {dock_id}")
+        else:
+            # Publish unlock failure event
+            topic = f"veloway/station/{Config.STATION_ID}/dock/{dock_id}/unlock_failed"
+            payload = {
+                "rentalId": rental_id,
+                "bikeId": bike_id,
+                "reason": "unlock_failed" if not success else "no_bike_detected"
+            }
+            self.mqtt.publish(topic, json.dumps(payload))
+            logger.warning(f" Unlock failed for rental {rental_id} on dock {dock_id}")
     
     def start(self):
         """Start the station"""
