@@ -20,7 +20,9 @@ public class StationManager {
     private BikeManager bikeManager;
 
     public Set<Station> getStationByStationId(String stationId) {
-        return stationRepository.findAll().collect(Collectors.toSet());
+        return stationRepository.findById(stationId)
+                .map(Set::of)
+                .orElse(Set.of());
     }
 
     public Set<Station> getAllStations() {
