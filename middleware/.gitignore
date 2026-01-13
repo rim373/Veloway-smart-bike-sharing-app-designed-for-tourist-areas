@@ -41,3 +41,4 @@ build/
 src/main/resources/META-INF/cloudinary.properties
 src/main/.env
 .env
+*.env
