@@ -36,3 +36,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Fichiers de configuration sensibles
+src/main/resources/META-INF/cloudinary.properties
+src/main/.env
+.env
+*.env

@@ -44,54 +44,5 @@ public class Payment{
             this.paymentId = "PAY-" + UUID.randomUUID().toString();
         }
     }
-    /*
-    public String getPaymentId() {
-        return paymentId;
-    }
-
-    public void setPaymentId(String paymentId) {
-        this.paymentId = paymentId;
-    }
-
-    public Float getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Float amount) {
-        this.amount = amount;
-    }
-
-    public LocalDateTime getDateTime() {
-        return dateTime;
-    }
-
-    public void setDateTime(LocalDateTime dateTime) {
-        this.dateTime = dateTime;
-    }
-
-    public String getTransactionReference() {
-        return transactionReference;
-    }
-
-    public void setTransactionReference(String transactionReference) {
-        this.transactionReference = transactionReference;
-    }
-
-    public String getPaymentMethodId() {
-        return paymentMethodId;
-    }
-
-    public void setPaymentMethodId(String paymentMethodId) {
-        this.paymentMethodId = paymentMethodId;
-    }
-
-    public String getPricingId() {
-        return pricingId;
-    }
-
-    public void setPricingId(String pricingId) {
-        this.pricingId = pricingId;
-    }
-    */
 
 }
